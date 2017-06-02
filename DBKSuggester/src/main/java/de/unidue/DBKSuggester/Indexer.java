@@ -38,7 +38,7 @@ public class Indexer {
 		this.megadoc = megadoc;
 	}
 
-	public void indexDocument(File inFile, List<String> cessda, List<String> za){
+	public void indexStudy(File inFile, List<String> cessda, List<String> za){
 
 		for (String c : cessda) {
 			String cleanc = c.replace("/ ", "");

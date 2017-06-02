@@ -3,6 +3,8 @@ package de.unidue.DBKSuggester;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +19,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 public class Maker {
-	
+
 	public static final String[] ZACATEGORIES = {
 			"Government, Political System",
 			"Political Institutions",
@@ -26,7 +28,6 @@ public class Maker {
 			"Political Issues",
 			"Political Attitudes and Behavior",
 			"Political Parties, Organizations",
-			"Public Figures",
 			"Armed Forces, Defense, Military Affairs",
 			"Legal system, Legislation, Law",
 			"Economic Systems",
@@ -58,7 +59,7 @@ public class Maker {
 			"Historical Social Research",
 			"Historical Studies Data"
 	};
-	
+
 	public static final String[] CESSDATOPICS = {
 			"Labour and employment",
 			"Working conditions",
@@ -70,11 +71,9 @@ public class Maker {
 			"Demography and population",
 			"Fertility",
 			"Migration",
-			"Morbidity and mortality",
 			"Censuses",
 			"Education",
 			"Educational policy",
-			"Basic skills education",
 			"Life-long / continuing education",
 			"Teaching profession",
 			"Vocational education",
@@ -115,10 +114,7 @@ public class Maker {
 			"Mass media",
 			"Language and linguistics",
 			"Advertising",
-			"Reference and instructional resources",
-			"Computer and simulation programs",
 			"Teaching packages and test datasets",
-			"Reference sources",
 			"Politics",
 			"Domestic political issues",
 			"International politics and organisation",
@@ -164,10 +160,18 @@ public class Maker {
 			"Housing"
 	};
 
-	
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
+		//makeMegadocs();
+		makeMegadocsNoFields();
+
+
+	}
+
+
+	static void makeMegadocs() {
 		//File sourceDirectory = new File("/Users/Martina/Desktop/alldata/cessda/train");
 		//String megaDirectory = "/Users/Martina/Desktop/alldata/cessda/mega";
 
@@ -185,11 +189,11 @@ public class Maker {
 			String creators = "";
 			String contentsDE = "";
 			String contentsEN = "";
-			
+
 			for(int i=0; i < fileList.size(); i++) {
 				String filepath = fileList.get(i).getPath();
 				Study study = parse(filepath);
-				
+
 				if (study.zaCategory().contains(category)) {
 					ids = ids + " " + study.id();
 					titlesDE = titlesDE + " " + study.titleDE();
@@ -198,10 +202,10 @@ public class Maker {
 					contentsDE = contentsDE + " " + study.contentDE();
 					contentsEN = contentsEN + " " + study.contentEN();
 				};
-				
+
 			}
-			
-			
+
+
 			Element megadoc = new Element("megadoc");
 			Document document = new Document(megadoc); 
 
@@ -211,23 +215,20 @@ public class Maker {
 			megadoc.addContent(new Element("creators").setText(creators));
 			megadoc.addContent(new Element("contentsDE").setText(contentsDE));
 			megadoc.addContent(new Element("contentsEN").setText(contentsEN));
-			
+
 			XMLOutputter xmlOutput = new XMLOutputter();  
 			try {
 				String cleancategory = category.replace("/ ", "");
 				System.out.println(cleancategory);
 				xmlOutput.setFormat(Format.getPrettyFormat());
 				xmlOutput.output(document, new FileWriter(  
-					     megaDirectory + "/" + cleancategory + ".xml"));
+						megaDirectory + "/" + cleancategory + ".xml"));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}  
-	    }
-		
-		
+		}
 	}
-
 
 	static Study parse(String inFile) {
 		String id = "";
@@ -249,10 +250,10 @@ public class Maker {
 		Namespace sNS = Namespace.getNamespace("s","ddi:studyunit:3_1");
 		Element studyUnit = instance.getChild("StudyUnit",sNS);
 		Namespace rNS = Namespace.getNamespace("r","ddi:reusable:3_1");
-		
+
 		Element userID = studyUnit.getChild("UserID", rNS);
 		id = userID.getText();
-		
+
 		Element citation = studyUnit.getChild("Citation", rNS);
 
 		List<Element> titles = citation.getChildren("Title", rNS);
@@ -300,5 +301,56 @@ public class Maker {
 		return new Study(id, titleDE, titleEN, creators, contentDE, contentEN, zaCategory, cessdaTopics);
 	}
 
+
+
+	static void makeMegadocsNoFields() {
+
+		File sourceDirectory = new File("/Users/Martina/Desktop/alldata/cessda/train");
+		String megaDirectory = "/Users/Martina/Desktop/alldata/cessda/meganofields";
+
+		//File sourceDirectory = new File("/Users/Martina/Desktop/alldata/za/train");
+		//String megaDirectory = "/Users/Martina/Desktop/alldata/za/meganofields";
+
+		File[] xmldocs = sourceDirectory.listFiles();
+		ArrayList<File> fileList = new ArrayList<File>(Arrays.asList(xmldocs));
+
+		for (String category: CESSDATOPICS) {
+
+			String doccontent = "";
+
+			for(int i=0; i < fileList.size(); i++) {
+				String filepath = fileList.get(i).getPath();
+				Study study = parse(filepath);
+
+				if (study.cessdaTopics().contains(category)) {
+					try {
+						doccontent = doccontent + " " + new String(Files.readAllBytes(Paths.get(filepath)));
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				};
+			}
+
+			Element megadoc = new Element("megadoc");
+			Document document = new Document(megadoc);
+			megadoc.addContent(new Element("doccontent").setText(doccontent));
+
+			XMLOutputter xmlOutput = new XMLOutputter();  
+			try {
+				String cleancategory = category.replace("/ ", "");
+				System.out.println(cleancategory);
+				xmlOutput.setFormat(Format.getPrettyFormat());
+				xmlOutput.output(document, new FileWriter(  
+						megaDirectory + "/" + cleancategory + ".xml"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}  
+
+		}
+
+
+	}
 
 }

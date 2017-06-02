@@ -78,10 +78,15 @@ public class MyUI extends UI {
     
     Label confirm = new Label("The Document has been added to the Index! You can upload another one.");
     
+    HorizontalLayout indexAndEvalButtons = new HorizontalLayout();
+    
     Button indexButton = new Button("Reset Index");
     Button indexNonMegaButton = new Button("Reset Index NonMegadoc");
+    Button indexNoFieldsButton = new Button("Reset Index NoFields");
     Button evalButton = new Button("Evaluate");
     Button evalNonMegaButton = new Button("Evaluate NonMegadoc");
+    Button evalNoFieldsButton = new Button("Evaluate NoFields");
+    
 	
     
     @Override
@@ -128,8 +133,12 @@ public class MyUI extends UI {
         evalButton.addClickListener(clickEvent -> megadoc.evaluate());
         indexNonMegaButton.addClickListener(clickEvent -> megadoc.nonMegaResetIndex());
         evalNonMegaButton.addClickListener(clickEvent -> megadoc.nonMegaEvaluate());
+        indexNoFieldsButton.addClickListener(clickEvent -> megadoc.noFieldsResetIndex());
+        evalNoFieldsButton.addClickListener(clickEvent -> megadoc.noFieldsEvaluate());
         
-        layout.addComponents(pageTitle, upload, studyContent, categoriesContainer, gap, sendButton, confirm, indexButton, evalButton, indexNonMegaButton, evalNonMegaButton);
+        indexAndEvalButtons.addComponents(indexButton, evalButton, indexNonMegaButton, evalNonMegaButton, indexNoFieldsButton, evalNoFieldsButton);
+        
+        layout.addComponents(pageTitle, upload, studyContent, categoriesContainer, gap, sendButton, confirm, indexAndEvalButtons);
         
         setContent(layout);
     }
@@ -232,7 +241,7 @@ public class MyUI extends UI {
     	processComboBoxes(comboBoxContainerCESSDA, selectedCategoriesCESSDA);
     	processComboBoxes(comboBoxContainerZA, selectedCategoriesZA);
     	
-    	megadoc.indexDocument(selectedCategoriesCESSDA, selectedCategoriesZA);
+    	megadoc.indexStudy(selectedCategoriesCESSDA, selectedCategoriesZA);
     	
     	studyContent.setVisible(false);
     	categoriesContainer.setVisible(false);

@@ -34,7 +34,6 @@ public class Megadoc {
 			"Political Issues",
 			"Political Attitudes and Behavior",
 			"Political Parties, Organizations",
-			"Public Figures",
 			"Armed Forces, Defense, Military Affairs",
 			"Legal system, Legislation, Law",
 			"Economic Systems",
@@ -77,11 +76,9 @@ public class Megadoc {
 			"Demography and population",
 			"Fertility",
 			"Migration",
-			"Morbidity and mortality",
 			"Censuses",
 			"Education",
 			"Educational policy",
-			"Basic skills education",
 			"Life-long / continuing education",
 			"Teaching profession",
 			"Vocational education",
@@ -122,10 +119,7 @@ public class Megadoc {
 			"Mass media",
 			"Language and linguistics",
 			"Advertising",
-			"Reference and instructional resources",
-			"Computer and simulation programs",
 			"Teaching packages and test datasets",
-			"Reference sources",
 			"Politics",
 			"Domestic political issues",
 			"International politics and organisation",
@@ -185,7 +179,10 @@ public class Megadoc {
 		}
 		
 		indexer = new Indexer(client, this);
+		
 		classifier = new DotClassifier(client);
+		//classifier = new MLTClassifier(client);
+		
 		evaluation = new Evaluation(client, classifier, this);
 		
 
@@ -206,6 +203,14 @@ public class Megadoc {
 	
 	public void nonMegaEvaluate() {
 		evaluation.nonMegaEvaluate();
+	}
+	
+	public void noFieldsResetIndex() {
+		evaluation.makeIndexNoFields();
+	}
+
+	public void noFieldsEvaluate() {
+		evaluation.noFieldsEvaluate();
 	}
 	
 	
@@ -248,11 +253,12 @@ public class Megadoc {
 		            matches.add(matcher.group());
 		        }
 				
-				for (int i=0; i<=5; i++) {
+				for (int i=0; i<=matches.size(); i++) {
 					int randomno = randomGenerator.nextInt(matches.size());
 					String randomdoc = matches.get(randomno);
 					String addition = "<a target=\"_blank\" href=\"https://dbk.gesis.org/dbksearch/SDesc2.asp?no="+randomdoc+"\">" + randomdoc + "</a> ";
 					tooltipC += addition;
+					if (i == 4) break;
 				}
 				
 				tooltipC += "<br>";
@@ -296,9 +302,12 @@ public class Megadoc {
 	}
 	
 	
-	public void indexDocument(List<String> cessda, List<String> za) {
-		indexer.indexDocument(currentFile, cessda, za);
+	public void indexStudy(List<String> cessda, List<String> za) {
+		indexer.indexStudy(currentFile, cessda, za);
 		
 	}
+
+
+	
 	
 }
