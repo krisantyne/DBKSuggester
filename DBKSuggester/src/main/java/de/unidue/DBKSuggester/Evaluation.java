@@ -355,7 +355,7 @@ public class Evaluation {
 				.setQuery(QueryBuilders
 						.moreLikeThisQuery(items)
 						.minTermFreq(1)
-						.maxQueryTerms(25)
+						.maxQueryTerms(10)
 						.minDocFreq(1))
 				.setTypes(type)
 				.get();
@@ -367,6 +367,7 @@ public class Evaluation {
 
 		for (int i=0; i<response.getHits().getTotalHits(); i++) {
 			double score = response.getHits().getAt(i).getScore();
+			if (score*1.3 < topscore) break;
 			Map<String, Object> field = response.getHits().getAt(i).sourceAsMap();
 			List<String> categories = (List<String>) field.get("categories");
 			for (String c : categories) {
@@ -375,7 +376,6 @@ public class Evaluation {
 					}
 			}
 			
-			if (score*2 < topscore) break;
 			if (i==9) break;
 		}
 		}
@@ -593,10 +593,10 @@ public class Evaluation {
 
 			for (int i=0; i<response.getHits().getTotalHits(); i++) {
 				double score = response.getHits().getAt(i).getScore();
+				if (score*1.5 < topscore1) break;
 				Map<String, Object> field = response.getHits().getAt(i).sourceAsMap();
 				String category = (String) field.get("category");
 				suggestedCategories.add(category);
-				if (score*1.5 < topscore1) break;
 				if (i==9) break;
 			}
 		}

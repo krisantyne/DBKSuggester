@@ -48,13 +48,13 @@ public class MLTClassifier extends Classifier {
 
 			for (int i=0; i<response1.getHits().getTotalHits(); i++) {
 				double score = response1.getHits().getAt(i).getScore();
+				if (score*1.5 < topscore1) break;
 				Map<String, Object> field = response1.getHits().getAt(i).sourceAsMap();
 				String category = (String) field.get("category");
 				String ids = (String) field.get("ids");
 				Map<String, String> suggestion = new HashMap<String, String>();
 				suggestion.put(category, ids);
 				suggestionsCESSDA.add(suggestion);
-				if (score*1.5 < topscore1) break;
 				if (i==9) break;
 			}
 		}
@@ -77,13 +77,13 @@ public class MLTClassifier extends Classifier {
 
 			for (int i=0; i<response2.getHits().getTotalHits(); i++) {
 				double score = response2.getHits().getAt(i).getScore();
+				if (score*1.5 < topscore2) break;
 				Map<String, Object> field = response2.getHits().getAt(i).sourceAsMap();
 				String category = (String) field.get("category");
 				String ids = (String) field.get("ids");
 				Map<String, String> suggestion = new HashMap<String, String>();
 				suggestion.put(category, ids);
 				suggestionsZA.add(suggestion);
-				if (score*1.3 < topscore2) break;
 				if (i==9) break;
 			}
 		}

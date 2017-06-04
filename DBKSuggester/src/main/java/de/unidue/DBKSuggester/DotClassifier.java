@@ -130,8 +130,8 @@ public class DotClassifier extends Classifier {
 			float topscore = keys.get(0);
 
 			for (float k : keys) {
+				if (k*1.5 < topscore) break;
 				bestScores.put(scores.get(k), k);
-				if (k*1.3 < topscore) break;
 			}
 
 
