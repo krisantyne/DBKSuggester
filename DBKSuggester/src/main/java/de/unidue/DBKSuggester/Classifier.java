@@ -22,13 +22,13 @@ import org.jdom2.input.SAXBuilder;
 public abstract class Classifier {
 
 	protected TransportClient client;
-	
+
 	public Classifier(TransportClient client) {
 		this.client = client;
 	}
-	
+
 	public Study parse(String inFile) {
-		
+
 		String id = "";
 		String titleDE = "";
 		String titleEN = "";
@@ -43,15 +43,16 @@ public abstract class Classifier {
 			doc = new SAXBuilder().build(inFile);
 		} catch (JDOMException | IOException e) {
 			e.printStackTrace();
+			return null;
 		}
 		Element instance = doc.getRootElement();
 		Namespace sNS = Namespace.getNamespace("s","ddi:studyunit:3_1");
 		Element studyUnit = instance.getChild("StudyUnit",sNS);
 		Namespace rNS = Namespace.getNamespace("r","ddi:reusable:3_1");
-		
+
 		Element userID = studyUnit.getChild("UserID", rNS);
 		id = userID.getText();
-		
+
 		Element citation = studyUnit.getChild("Citation", rNS);
 
 		List<Element> titles = citation.getChildren("Title", rNS);
@@ -95,17 +96,19 @@ public abstract class Classifier {
 				cessdaTopics.add(subject.getText());
 			}
 		}
-		
+
 		return new Study(id, titleDE, titleEN, creators, contentDE, contentEN, zaCategory, cessdaTopics);	
 	}
-	
-	
-	
+
+
+
 	public XContentBuilder buildXContent(Study study) {
 		XContentBuilder newDoc = null;
-		try {
-			newDoc = XContentFactory.jsonBuilder()
-					.startObject()
+		
+		if (study != null) {
+			try {
+				newDoc = XContentFactory.jsonBuilder()
+						.startObject()
 						.field("category", "")
 						.field("ids", study.id())
 						.field("titlesDE", study.titleDE())
@@ -113,22 +116,23 @@ public abstract class Classifier {
 						.field("creators", study.creators())
 						.field("contentsDE", study.contentDE())
 						.field("contentsEN", study.contentEN())
-					.endObject();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+						.endObject();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		
+
 
 		return newDoc;
 	}
-	
-	
+
+
 	abstract List<List<Map<String, String>>> classify(String inFile);
-	
-	
-	
-	
-	
+
+
+
+
+
 
 }

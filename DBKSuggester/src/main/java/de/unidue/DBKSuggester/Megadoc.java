@@ -1,11 +1,15 @@
 package de.unidue.DBKSuggester;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,13 +23,13 @@ public class Megadoc {
 
 
 	private TransportClient client;
-	
+
 	private Indexer indexer;
 	private Classifier classifier;
 	private Evaluation evaluation;
-	
+
 	private File currentFile;
-	
+
 	public String[] ZACATEGORIES = {
 			"Government, Political System",
 			"Political Institutions",
@@ -164,10 +168,12 @@ public class Megadoc {
 			"Land use and planning",
 			"Housing"
 	};
+
+	public String path = "";
 	
-	
+
 	public Megadoc(){
-		
+
 		Settings settings = Settings.builder()
 				.put("client.transport.sniff", true).build();
 		try {
@@ -177,34 +183,62 @@ public class Megadoc {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		InputStream inputStream = null;
+		
+		try {
+			Properties prop = new Properties();
+			String propFileName = "dbksuggester.properties";
+ 
+			inputStream = getClass().getClassLoader().getResourceAsStream(propFileName);
+ 
+			if (inputStream != null) {
+				prop.load(inputStream);
+			} else {
+				throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
+			}
+			// get the property value and print it out
+			path = prop.getProperty("path");
+ 
+		} catch (Exception e) {
+			System.out.println("Exception: " + e);
+		} finally {
+			try {
+				inputStream.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		
 		indexer = new Indexer(client, this);
-		
-		classifier = new DotClassifier(client);
-		//classifier = new MLTClassifier(client);
-		
+
+		//classifier = new DotClassifier(client);
+		classifier = new MLTClassifier(client);
+
 		evaluation = new Evaluation(client, classifier, this);
-		
+
 
 	}
-	
-	
+
+
 	public void resetIndex() {
 		indexer.makeIndex();
 	}
-	
+
 	public void evaluate() {
 		evaluation.evaluate();
 	}
-	
+
 	public void nonMegaResetIndex() {
 		evaluation.makeIndexNonMega();
 	}
-	
+
 	public void nonMegaEvaluate() {
 		evaluation.nonMegaEvaluate();
 	}
-	
+
 	public void noFieldsResetIndex() {
 		evaluation.makeIndexNoFields();
 	}
@@ -212,102 +246,107 @@ public class Megadoc {
 	public void noFieldsEvaluate() {
 		evaluation.noFieldsEvaluate();
 	}
-	
-	
+
+
 	public Study getStudy(File inFile) {
 		currentFile = inFile;
 		return classifier.parse(inFile.getPath());
 	}
-	
-	public Suggestion makeSuggestion(File inFile) {
-		
-		List<List<Map<String, String>>> result = classifier.classify(inFile.getPath());
-		
-		List<Map<String, String>> cessdaMap = result.get(0);
-		List<Map<String, String>> zaMap = result.get(1);
-		
-		List<String> cessdaList = new ArrayList<String>();
-		List<String> zaList = new ArrayList<String>();
-		
-		
-		String tooltipC = "";
-		String tooltipZ = "";
 
-		Pattern pattern = Pattern.compile("\\d{4}");
-		Random randomGenerator = new Random();
-		
-		for (Map<String, String> c : cessdaMap) {
-			for (Map.Entry<String, String> entry : c.entrySet()) {
-				
-				String cat = entry.getKey();
-				cessdaList.add(cat);
-				
-				String ids = entry.getValue();
-				
-				tooltipC += "<b>" + cat + "</b>: ";
-				
-				Matcher matcher = pattern.matcher(ids);
-				List<String> matches = new ArrayList<String>();
-				
-				while (matcher.find()) {
-		            matches.add(matcher.group());
-		        }
-				
-				for (int i=0; i<=matches.size(); i++) {
-					int randomno = randomGenerator.nextInt(matches.size());
-					String randomdoc = matches.get(randomno);
-					String addition = "<a target=\"_blank\" href=\"https://dbk.gesis.org/dbksearch/SDesc2.asp?no="+randomdoc+"\">" + randomdoc + "</a> ";
-					tooltipC += addition;
-					if (i == 4) break;
+	public Suggestion makeSuggestion(File inFile) {
+
+		List<List<Map<String, String>>> result = classifier.classify(inFile.getPath());
+
+		if (result != null) {
+
+			List<Map<String, String>> cessdaMap = result.get(0);
+			List<Map<String, String>> zaMap = result.get(1);
+
+			List<String> cessdaList = new ArrayList<String>();
+			List<String> zaList = new ArrayList<String>();
+
+
+			String tooltipC = "";
+			String tooltipZ = "";
+
+			Pattern pattern = Pattern.compile("\\d{4}");
+			Random randomGenerator = new Random();
+
+			for (Map<String, String> c : cessdaMap) {
+				for (Map.Entry<String, String> entry : c.entrySet()) {
+
+					String cat = entry.getKey();
+					cessdaList.add(cat);
+
+					String ids = entry.getValue();
+
+					tooltipC += "<b>" + cat + "</b>: ";
+
+					Matcher matcher = pattern.matcher(ids);
+					List<String> matches = new ArrayList<String>();
+
+					while (matcher.find()) {
+						matches.add(matcher.group());
+					}
+
+					for (int i=0; i<=matches.size(); i++) {
+						int randomno = randomGenerator.nextInt(matches.size());
+						String randomdoc = matches.get(randomno);
+						String addition = "<a target=\"_blank\" href=\"https://dbk.gesis.org/dbksearch/SDesc2.asp?no="+randomdoc+"\">" + randomdoc + "</a> ";
+						tooltipC += addition;
+						if (i == 4) break;
+					}
+
+					tooltipC += "<br>";
+
 				}
-				
-				tooltipC += "<br>";
-				
 			}
-		}
-		
-		for (Map<String, String> z : zaMap) {
-			for (Map.Entry<String, String> entry : z.entrySet()) {
-				
-				String cat = entry.getKey();
-				zaList.add(cat);
-				
-				String ids = entry.getValue();
-				
-				tooltipZ += "<b>" + cat + "</b>: ";
-				
-				Matcher matcher = pattern.matcher(ids);
-				List<String> matches = new ArrayList<String>();
-				
-				while (matcher.find()) {
-		            matches.add(matcher.group());
-		        }
-				
-				for (int i=0; i<=5; i++) {
-					int randomno = randomGenerator.nextInt(matches.size());
-					String randomdoc = matches.get(randomno);
-					String addition = "<a target=\"_blank\" href=\"https://dbk.gesis.org/dbksearch/SDesc2.asp?no="+randomdoc+"\">" + randomdoc + "</a> ";
-					tooltipZ += addition;
+
+			for (Map<String, String> z : zaMap) {
+				for (Map.Entry<String, String> entry : z.entrySet()) {
+
+					String cat = entry.getKey();
+					zaList.add(cat);
+
+					String ids = entry.getValue();
+
+					tooltipZ += "<b>" + cat + "</b>: ";
+
+					Matcher matcher = pattern.matcher(ids);
+					List<String> matches = new ArrayList<String>();
+
+					while (matcher.find()) {
+						matches.add(matcher.group());
+					}
+
+					for (int i=0; i<=5; i++) {
+						int randomno = randomGenerator.nextInt(matches.size());
+						String randomdoc = matches.get(randomno);
+						String addition = "<a target=\"_blank\" href=\"https://dbk.gesis.org/dbksearch/SDesc2.asp?no="+randomdoc+"\">" + randomdoc + "</a> ";
+						tooltipZ += addition;
+					}
+
+					tooltipZ += "<br>";
+
 				}
-				
-				tooltipZ += "<br>";
-				
 			}
+
+
+			return new Suggestion(cessdaList, zaList, tooltipC, tooltipZ);
+
+		} else {
+			return null;
 		}
-		
-		
-		return new Suggestion(cessdaList, zaList, tooltipC, tooltipZ);
-		
-		
+
 	}
-	
-	
+
+
 	public void indexStudy(List<String> cessda, List<String> za) {
 		indexer.indexStudy(currentFile, cessda, za);
-		
+
 	}
 
 
-	
-	
+
+
 }

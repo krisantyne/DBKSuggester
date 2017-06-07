@@ -33,25 +33,30 @@ public class Evaluation {
 	Classifier classifier;
 	Megadoc megadoc;
 
-	String cessdatest = "/Users/Martina/Desktop/alldata/cessda/test";
-	String zatest = "/Users/Martina/Desktop/alldata/za/test";
-
-	String path = "/Users/Martina/Desktop/alldata/";
+	String path = "";
+	
+	String cessdatest = "";
+	String zatest = "";
 
 
 	public Evaluation(TransportClient client, Classifier classifier, Megadoc megadoc) {
 		this.client = client;
 		this.classifier = classifier;
 		this.megadoc = megadoc;
+		
+		path = megadoc.path;
+		
+		cessdatest = path + "cessda/test";
+		zatest = path + "za/test";
 	}
 
 
 	public void evaluate() {
 
-		//List<Float> zaResults = evalPart("za");
+		List<Float> zaResults = evalPart("za");
 		List<Float> cessdaResults = evalPart("cessda");
 		
-		//System.out.println("ZA: Precision: " + zaResults.get(0) + " Recall: " + zaResults.get(1) + " F: " + zaResults.get(2));
+		System.out.println("ZA: Precision: " + zaResults.get(0) + " Recall: " + zaResults.get(1) + " F: " + zaResults.get(2));
 		System.out.println("CESSDA: Precision: " + cessdaResults.get(0) + " Recall: " + cessdaResults.get(1) + " F: " + cessdaResults.get(2));
 
 	}
@@ -69,12 +74,12 @@ public class Evaluation {
 		}
 		ArrayList<File> fileList = new ArrayList<File>(Arrays.asList(xmldocs));
 
-		//Random randomGenerator = new Random();
+		Random randomGenerator = new Random();
 		
-		for(int i=0; i < fileList.size(); i++) {
-			//int randomno = randomGenerator.nextInt(fileList.size());
+		for(int i=0; i < 100; i++) {
+			int randomno = randomGenerator.nextInt(fileList.size());
 			
-			String filepath = fileList.get(i).getPath();
+			String filepath = fileList.get(randomno).getPath();
 			Study study = classifier.parse(filepath);
 			
 			List<String> realCategoriesUnprocessed;
@@ -93,9 +98,9 @@ public class Evaluation {
 			List<String> suggestedCategories;
 			
 			if (type.equals("cessda")) {
-				suggestedCategories = megadoc.makeSuggestion(fileList.get(i)).getCessdaCats();
+				suggestedCategories = megadoc.makeSuggestion(fileList.get(randomno)).getCessdaCats();
 			} else {
-				suggestedCategories = megadoc.makeSuggestion(fileList.get(i)).getZaCats();
+				suggestedCategories = megadoc.makeSuggestion(fileList.get(randomno)).getZaCats();
 			}
 			
 			float precision = calcPrecision(realCategories, suggestedCategories);
@@ -108,8 +113,8 @@ public class Evaluation {
 					+ " Suggested: " + suggestedCategories + " Precision: " + precision + " Recall: " + recall);
 		}
 
-		float avgPrecision = sumPrecicison / fileList.size();
-		float avgRecall = sumRecall / fileList.size();
+		float avgPrecision = sumPrecicison / 100;
+		float avgRecall = sumRecall / 100;
 
 		float fbalance = 2;
 		float fmeasure = (float) ((float) ((1 + Math.pow(fbalance, 2)) * avgPrecision * avgRecall) / (Math.pow(fbalance, 2) * avgPrecision + avgRecall));
@@ -355,7 +360,7 @@ public class Evaluation {
 				.setQuery(QueryBuilders
 						.moreLikeThisQuery(items)
 						.minTermFreq(1)
-						.maxQueryTerms(10)
+						.maxQueryTerms(25)
 						.minDocFreq(1))
 				.setTypes(type)
 				.get();
@@ -367,7 +372,7 @@ public class Evaluation {
 
 		for (int i=0; i<response.getHits().getTotalHits(); i++) {
 			double score = response.getHits().getAt(i).getScore();
-			if (score*1.3 < topscore) break;
+			if (score*2 < topscore) break;
 			Map<String, Object> field = response.getHits().getAt(i).sourceAsMap();
 			List<String> categories = (List<String>) field.get("categories");
 			for (String c : categories) {
@@ -394,7 +399,7 @@ public class Evaluation {
 
 	}
 	
-	public List<Float> noFieldsEvalPart(String type) {
+	private List<Float> noFieldsEvalPart(String type) {
 		float sumPrecicison = 0;
 		float sumRecall = 0;
 		File[] xmldocs;
@@ -496,7 +501,7 @@ public class Evaluation {
 		makeIndexPartNoFields("za");
 	}
 
-	public void makeIndexPartNoFields(String part) {
+	private void makeIndexPartNoFields(String part) {
 		try {
 
 			XContentBuilder indexMappings = XContentFactory.jsonBuilder().
@@ -550,7 +555,7 @@ public class Evaluation {
 	}
 	
 	
-	public static Map<String, Object> parseMegaNoFields(String inFile, String filename){
+	private static Map<String, Object> parseMegaNoFields(String inFile, String filename){
 		Map<String, Object> jsonDocument = new HashMap<String, Object>();
 
 		org.jdom2.Document doc = new org.jdom2.Document();
@@ -569,7 +574,7 @@ public class Evaluation {
 	}
 	
 	
-	public List<String> noFieldsClassify(XContentBuilder xContent, String type) {
+	private List<String> noFieldsClassify(XContentBuilder xContent, String type) {
 		
 		XContentBuilder newDoc = xContent;
 

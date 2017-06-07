@@ -31,11 +31,13 @@ public class Indexer {
 
 	private TransportClient client;
 	private Megadoc megadoc;
-	String path = "/Users/Martina/Desktop/alldata/";
+	String path = "";
 
 	public Indexer(TransportClient client, Megadoc megadoc) {
 		this.client = client;
 		this.megadoc = megadoc;
+		
+		path = megadoc.path;
 	}
 
 	public void indexStudy(File inFile, List<String> cessda, List<String> za){

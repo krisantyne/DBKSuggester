@@ -118,7 +118,7 @@ public class DotClassifier extends Classifier {
 				float dotproductContentsDE = calcDotProduct(queryTermsContentsDE, docVectorContentsDE);
 				float dotproductContentsEN = calcDotProduct(queryTermsContentsEN, docVectorContentsEN);
 
-				float score = (dotproductContentsDE + dotproductContentsEN + dotproductCreators + dotproductTitlesDE + dotproductTitlesEN) / 5;
+				float score = (dotproductTitlesDE + dotproductTitlesEN + dotproductCreators + dotproductContentsDE + dotproductContentsEN) / 2;
 
 				scores.put(score, i);
 
@@ -204,9 +204,8 @@ public class DotClassifier extends Classifier {
 		Map<String, Float> bestTermsAndTFIDFs = new HashMap<String, Float>();
 
 		for (int i=0; i < keys.size() ; i++) {
-
-			bestTermsAndTFIDFs.put(termsAndIDFs.get(keys.get(i)), termsAndTFIDFs.get(termsAndIDFs.get(keys.get(i))));
 			if (i == 10) break;
+			bestTermsAndTFIDFs.put(termsAndIDFs.get(keys.get(i)), termsAndTFIDFs.get(termsAndIDFs.get(keys.get(i))));
 		}
 
 		return bestTermsAndTFIDFs;
