@@ -27,6 +27,9 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+/**
+ * Has all the functions for the automatic evaluation
+ */
 public class Evaluation {
 
 	TransportClient client;
@@ -39,6 +42,11 @@ public class Evaluation {
 	String zatest = "";
 
 
+	/**
+	 * @param client
+	 * @param classifier
+	 * @param megadoc
+	 */
 	public Evaluation(TransportClient client, Classifier classifier, Megadoc megadoc) {
 		this.client = client;
 		this.classifier = classifier;
@@ -51,6 +59,9 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Automatic evaluation for megadoc with fields, prints results on console
+	 */
 	public void evaluate() {
 
 		List<Float> zaResults = evalPart("za");
@@ -61,6 +72,13 @@ public class Evaluation {
 
 	}
 	
+	/**
+	 * Takes all documents from the test folder and classifies them. The real categories in the file are
+	 * compared with the classifier's suggestions by calculating precision and recall for each document.
+	 * In the end, the average precision, reacall and F2 are calculated.
+	 * @param type CESSDA or ZA
+	 * @return List of average precision, recall and F2
+	 */
 	private List<Float> evalPart(String type) {
 		
 		float sumPrecicison = 0;
@@ -74,12 +92,10 @@ public class Evaluation {
 		}
 		ArrayList<File> fileList = new ArrayList<File>(Arrays.asList(xmldocs));
 
-		Random randomGenerator = new Random();
 		
-		for(int i=0; i < 100; i++) {
-			int randomno = randomGenerator.nextInt(fileList.size());
+		for(int i=0; i < fileList.size(); i++) {
 			
-			String filepath = fileList.get(randomno).getPath();
+			String filepath = fileList.get(i).getPath();
 			Study study = classifier.parse(filepath);
 			
 			List<String> realCategoriesUnprocessed;
@@ -98,9 +114,9 @@ public class Evaluation {
 			List<String> suggestedCategories;
 			
 			if (type.equals("cessda")) {
-				suggestedCategories = megadoc.makeSuggestion(fileList.get(randomno)).getCessdaCats();
+				suggestedCategories = megadoc.makeSuggestion(fileList.get(i)).getCessdaCats();
 			} else {
-				suggestedCategories = megadoc.makeSuggestion(fileList.get(randomno)).getZaCats();
+				suggestedCategories = megadoc.makeSuggestion(fileList.get(i)).getZaCats();
 			}
 			
 			float precision = calcPrecision(realCategories, suggestedCategories);
@@ -113,8 +129,8 @@ public class Evaluation {
 					+ " Suggested: " + suggestedCategories + " Precision: " + precision + " Recall: " + recall);
 		}
 
-		float avgPrecision = sumPrecicison / 100;
-		float avgRecall = sumRecall / 100;
+		float avgPrecision = sumPrecicison / fileList.size();
+		float avgRecall = sumRecall / fileList.size();
 
 		float fbalance = 2;
 		float fmeasure = (float) ((float) ((1 + Math.pow(fbalance, 2)) * avgPrecision * avgRecall) / (Math.pow(fbalance, 2) * avgPrecision + avgRecall));
@@ -128,6 +144,12 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Calculates Precision for one study
+	 * @param real Real categories
+	 * @param suggested Suggested categories
+	 * @return Precision
+	 */
 	private float calcPrecision(List<String> real, List<String> suggested) {
 
 		int retrieved = suggested.size();
@@ -149,6 +171,12 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Calculates Recall for one study
+	 * @param real Real categories
+	 * @param suggested Suggested categories
+	 * @return Recall
+	 */
 	private float calcRecall(List<String> real, List<String> suggested) {
 
 		int relevant = real.size();
@@ -165,6 +193,9 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Automatic evaluation of classification without megadocs, prints results on console
+	 */
 	public void nonMegaEvaluate() {
 
 		List<Float> zaResults = nonMegaEvalPart("za");
@@ -176,6 +207,11 @@ public class Evaluation {
 	}
 	
 	
+	/**
+	 * Same as evalPart
+	 * @param type
+	 * @return
+	 */
 	private List<Float> nonMegaEvalPart(String type){
 		float sumPrecicison = 0;
 		float sumRecall = 0;
@@ -234,6 +270,9 @@ public class Evaluation {
 
 
 
+	/**
+	 * Makes or resets Elasticsearch index for classification without megadocs 
+	 */
 	public void makeIndexNonMega(){
 
 		boolean exists = client.admin().indices()
@@ -265,6 +304,10 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Makes index mapping for nonmegadoc and indexes the files from the train folder
+	 * @param part CESSDA or ZA
+	 */
 	private void makeIndexPartNonMega(String part) {
 
 		try {
@@ -349,6 +392,13 @@ public class Evaluation {
 		}
 	}
 
+	/**
+	 * MoreLikeThis classification without megadocs, all categories from the top hits are chosen as
+	 * suggestions
+	 * @param xContent JSON from study file
+	 * @param type CESSDA or ZA
+	 * @return List of suggested categories
+	 */
 	private List<String> nonMegaClassify(XContentBuilder xContent, String type) {
 
 		XContentBuilder newDoc = xContent;
@@ -360,7 +410,7 @@ public class Evaluation {
 				.setQuery(QueryBuilders
 						.moreLikeThisQuery(items)
 						.minTermFreq(1)
-						.maxQueryTerms(25)
+						.maxQueryTerms(10)
 						.minDocFreq(1))
 				.setTypes(type)
 				.get();
@@ -372,7 +422,7 @@ public class Evaluation {
 
 		for (int i=0; i<response.getHits().getTotalHits(); i++) {
 			double score = response.getHits().getAt(i).getScore();
-			if (score*2 < topscore) break;
+			if (score*1.3 < topscore) break;
 			Map<String, Object> field = response.getHits().getAt(i).sourceAsMap();
 			List<String> categories = (List<String>) field.get("categories");
 			for (String c : categories) {
@@ -390,6 +440,9 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Automatic evaluation of megadoc classification without fields, prints results on console
+	 */
 	public void noFieldsEvaluate() {
 		List<Float> zaResults = noFieldsEvalPart("za");
 		List<Float> cessdaResults = noFieldsEvalPart("cessda");
@@ -399,6 +452,11 @@ public class Evaluation {
 
 	}
 	
+	/**
+	 * Same as evalPart
+	 * @param type
+	 * @return
+	 */
 	private List<Float> noFieldsEvalPart(String type) {
 		float sumPrecicison = 0;
 		float sumRecall = 0;
@@ -456,6 +514,11 @@ public class Evaluation {
 		
 	}
 	
+	/**
+	 * Makes JSON for megadocuments without fields, it has just the fields category and doccontent
+	 * @param filepath
+	 * @return JSON
+	 */
 	private XContentBuilder buildXContentNoFields(String filepath) {
 		String doccontent = "";
 		XContentBuilder newDoc = null;
@@ -474,6 +537,9 @@ public class Evaluation {
 	}
 
 
+	/**
+	 * Makes or resets Elasticsearch index for classification with megadocs without fields
+	 */
 	public void makeIndexNoFields() {
 		boolean exists = client.admin().indices()
 			    .prepareExists("nofields")
@@ -501,6 +567,10 @@ public class Evaluation {
 		makeIndexPartNoFields("za");
 	}
 
+	/**
+	 * Makes index mapping for meganofields and indexes the megadocs without fields
+	 * @param part CESSDA or ZA
+	 */
 	private void makeIndexPartNoFields(String part) {
 		try {
 
@@ -555,6 +625,12 @@ public class Evaluation {
 	}
 	
 	
+	/**
+	 * Makes JSON from a megadocument no fields file
+	 * @param inFile The megadocument no fields file
+	 * @param filename The (file)name that gets put in the category field
+	 * @return JSON formatted content
+	 */
 	private static Map<String, Object> parseMegaNoFields(String inFile, String filename){
 		Map<String, Object> jsonDocument = new HashMap<String, Object>();
 
@@ -574,6 +650,12 @@ public class Evaluation {
 	}
 	
 	
+	/**
+	 * MoreLikeThis classification with megadocs without fields
+	 * @param xContent JSON from study file
+	 * @param type CESSDA or ZA
+	 * @return List of suggested categories
+	 */
 	private List<String> noFieldsClassify(XContentBuilder xContent, String type) {
 		
 		XContentBuilder newDoc = xContent;

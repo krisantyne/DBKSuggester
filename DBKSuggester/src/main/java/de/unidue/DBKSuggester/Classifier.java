@@ -19,14 +19,26 @@ import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 
 
+/**
+ * Superclass of the different classifiers that holds methods that work the same for
+ * every classifier
+ */
 public abstract class Classifier {
 
 	protected TransportClient client;
 
+	/**
+	 * @param client Uses TransportClient passed from the main class
+	 */
 	public Classifier(TransportClient client) {
 		this.client = client;
 	}
 
+	/**
+	 * Parses XML file to get Title, Content and Creator fields to turn into Study object
+	 * @param inFile The uploaded file
+	 * @return The extracted Study
+	 */
 	public Study parse(String inFile) {
 
 		String id = "";
@@ -102,6 +114,11 @@ public abstract class Classifier {
 
 
 
+	/**
+	 * Transforms Study object into JSON format for Elasticsearch
+	 * @param study Input Study
+	 * @return XContentBuilder with JSON of the Study
+	 */
 	public XContentBuilder buildXContent(Study study) {
 		XContentBuilder newDoc = null;
 		
@@ -128,6 +145,11 @@ public abstract class Classifier {
 	}
 
 
+	/**
+	 * Method for classification to be implemented by each classifier
+	 * @param inFile The file path of the study file
+	 * @return Object that gets turned into a Suggestion in the main class
+	 */
 	abstract List<List<Map<String, String>>> classify(String inFile);
 
 

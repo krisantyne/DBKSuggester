@@ -11,9 +11,15 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
 
+/**
+ * Megadocument classifier implementation using MoreLikeThis function from Elasticsearch
+ */
 public class MLTClassifier extends Classifier {
 
 
+	/**
+	 * @param client
+	 */
 	public MLTClassifier(TransportClient client) {
 		super(client);
 		// TODO Auto-generated constructor stub
@@ -21,6 +27,10 @@ public class MLTClassifier extends Classifier {
 
 
 
+	/** 
+	 * Sends a MoreLikeThisQuery with the uploaded study to Elasticsearch (one for CESSDA and one
+	 * for ZA) and selects the top hits to use as suggestions
+	 */
 	@Override
 	public List<List<Map<String, String>>> classify(String inFile){
 
@@ -35,7 +45,7 @@ public class MLTClassifier extends Classifier {
 					.setQuery(QueryBuilders
 							.moreLikeThisQuery(items1)
 							.minTermFreq(1)
-							.maxQueryTerms(25)
+							.maxQueryTerms(10) // <---- adjust max query terms here
 							.minDocFreq(1))
 					.setTypes("cessda")
 					.get();
@@ -50,7 +60,7 @@ public class MLTClassifier extends Classifier {
 
 				for (int i=0; i<response1.getHits().getTotalHits(); i++) {
 					double score = response1.getHits().getAt(i).getScore();
-					if (score*1.3 < topscore1) break;
+					if (score*1.3 < topscore1) break; // <---- cutoff for score can be adjusted here
 					Map<String, Object> field = response1.getHits().getAt(i).sourceAsMap();
 					String category = (String) field.get("category");
 					String ids = (String) field.get("ids");
@@ -69,7 +79,7 @@ public class MLTClassifier extends Classifier {
 					.setQuery(QueryBuilders
 							.moreLikeThisQuery(items2)
 							.minTermFreq(1)
-							.maxQueryTerms(25)
+							.maxQueryTerms(10) // <---- adjust max query terms here
 							.minDocFreq(1))
 					.setTypes("za")
 					.get();
@@ -79,7 +89,7 @@ public class MLTClassifier extends Classifier {
 
 				for (int i=0; i<response2.getHits().getTotalHits(); i++) {
 					double score = response2.getHits().getAt(i).getScore();
-					if (score*1.3 < topscore2) break;
+					if (score*1.3 < topscore2) break; // <---- cutoff for score can be adjusted here
 					Map<String, Object> field = response2.getHits().getAt(i).sourceAsMap();
 					String category = (String) field.get("category");
 					String ids = (String) field.get("ids");

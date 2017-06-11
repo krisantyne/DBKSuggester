@@ -19,6 +19,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
+/**
+ * The main class that connects the UI with the parts of the application
+ */
 public class Megadoc {
 
 
@@ -172,6 +175,10 @@ public class Megadoc {
 	public String path = "";
 	
 
+	/**
+	 * Initialization creates the TransportClient for communicating with Elasticsearch,
+	 * reads the properties file and initializes the other application parts
+	 */
 	public Megadoc(){
 
 		Settings settings = Settings.builder()
@@ -223,36 +230,66 @@ public class Megadoc {
 	}
 
 
+	/**
+	 * Tells Indexer to create or reset Megadoc index
+	 */
 	public void resetIndex() {
 		indexer.makeIndex();
 	}
 
+	/**
+	 * Tells Evaluation to run automatic evaluation with Megadoc
+	 */
 	public void evaluate() {
 		evaluation.evaluate();
 	}
 
+	/**
+	 * Tells Indexer to create or reset NonMegadoc index
+	 */
 	public void nonMegaResetIndex() {
 		evaluation.makeIndexNonMega();
 	}
 
+	/**
+	 * Tells Evaluation to run automatic evaluation with NonMegadoc
+	 */
 	public void nonMegaEvaluate() {
 		evaluation.nonMegaEvaluate();
 	}
 
+	/**
+	 * Tells Indexer to create or reset Megadoc without fields index
+	 */
 	public void noFieldsResetIndex() {
 		evaluation.makeIndexNoFields();
 	}
 
+	/**
+	 * Tells Evaluation to run automatic evaluation with Megadoc without fields
+	 */
 	public void noFieldsEvaluate() {
 		evaluation.noFieldsEvaluate();
 	}
 
 
+	/**
+	 * Extracts Study object from uploaded file
+	 * @param inFile The uploaded file
+	 * @return The extracted Study
+	 */
 	public Study getStudy(File inFile) {
 		currentFile = inFile;
 		return classifier.parse(inFile.getPath());
 	}
 
+	/**
+	 * Classifies the study from the uploaded file to create the category suggestions and
+	 * the tooltips from the ids.
+	 * @param inFile The uploaded file
+	 * @return A Suggestion object that includes the category suggestions and the text for
+	 * the tooltips
+	 */
 	public Suggestion makeSuggestion(File inFile) {
 
 		List<List<Map<String, String>>> result = classifier.classify(inFile.getPath());
@@ -341,6 +378,11 @@ public class Megadoc {
 	}
 
 
+	/**
+	 * Adds the new study to the index after the user has selected the categories.
+	 * @param cessda Selected CESSDA categories
+	 * @param za Selected ZA categories
+	 */
 	public void indexStudy(List<String> cessda, List<String> za) {
 		indexer.indexStudy(currentFile, cessda, za);
 

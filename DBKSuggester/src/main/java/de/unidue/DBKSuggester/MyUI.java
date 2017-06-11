@@ -147,6 +147,9 @@ public class MyUI extends UI {
 	}
 
 
+	/**
+	 * Upload handling
+	 */
 	class DocUploader implements Receiver, SucceededListener {
 		public File file;
 
@@ -164,8 +167,10 @@ public class MyUI extends UI {
 
 		}
 
+		/**
+		 * Fills the UI with content of the uploaded file and category suggestions
+		 */
 		public void uploadSucceeded(SucceededEvent event) {
-			// Show the uploaded file in the image viewer
 			Suggestion suggestions = megadoc.makeSuggestion(tempFile);
 			if (suggestions != null) {
 
@@ -191,6 +196,10 @@ public class MyUI extends UI {
 	};
 
 
+	/**
+	 * Shows the contents (Title, Content and Creators fields) of the uploaded file in the UI
+	 * @param study Study object to get the information from
+	 */
 	private void fillStudyContent(Study study) {
 		studyContent.setValue( 
 				"<h2>Study:</h2>" +
@@ -206,6 +215,9 @@ public class MyUI extends UI {
 		studyContent.setVisible(true);
 	}
 
+	/**
+	 * Adds new ComboBox for CESSDA topics after already available ComboBoxes have been used
+	 */
 	private void addComboBoxCESSDA(){
 		comboBoxContainerCESSDA.addComponent(new ComboBox<String>() {{ 
 			setItems(megadoc.CESSDATOPICS); 
@@ -213,6 +225,9 @@ public class MyUI extends UI {
 		}});
 	}
 
+	/**
+	 * Adds new ComboBox for ZA categories after already available ComboBoxes have been used
+	 */
 	private void addComboBoxZA(){
 		comboBoxContainerZA.addComponent(new ComboBox<String>() {{ 
 			setItems(megadoc.ZACATEGORIES); 
@@ -220,6 +235,11 @@ public class MyUI extends UI {
 		}});
 	}
 
+	/**
+	 * Gets the selected categories from all ComboBoxes of a container
+	 * @param layout The CESSDA or ZA ComboBox container
+	 * @param selcat The list of all selected categories 
+	 */
 	private void processComboBoxes(ComponentContainer layout, List<String> selcat) {
 		Iterator<Component> componentIterator = layout.getComponentIterator();
 		while (componentIterator.hasNext()) {
@@ -239,6 +259,10 @@ public class MyUI extends UI {
 		}
 	}
 
+	/**
+	 * Sends the user selected categories to the Indexer, cleans up the UI and shows confirmation
+	 * message
+	 */
 	private void send() {
 
 		for (String s : suggestionBoxCESSDA.getSelectedItems()) {

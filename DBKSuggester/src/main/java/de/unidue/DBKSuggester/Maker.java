@@ -18,6 +18,9 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+/**
+ * Makes megadocuments from a folder of study XML files
+ */
 public class Maker {
 
 	public static final String[] ZACATEGORIES = {
@@ -161,28 +164,37 @@ public class Maker {
 	};
 
 
+	/**
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		//makeMegadocs();
-		makeMegadocsNoFields();
+		makeMegadocs();
+		//makeMegadocsNoFields();
 
 
 	}
 
 
+	/**
+	 * For each category in the list: Reads all study XML files from the training directory, takes the
+	 * field contents from those who belong to that category and then writes the megadoc to the megadoc
+	 * category
+	 * (You have to edit the folder paths here, I couldn't get it to work with String[] args input)
+	 */
 	static void makeMegadocs() {
-		//File sourceDirectory = new File("/Users/Martina/Desktop/alldata/cessda/train");
-		//String megaDirectory = "/Users/Martina/Desktop/alldata/cessda/mega";
+		File sourceDirectoryCESSDA = new File("/Users/Martina/Desktop/alldata Kopie/cessda/train");
+		String megaDirectoryCESSDA = "/Users/Martina/Desktop/alldata Kopie/cessda/mega";
 
-		File sourceDirectory = new File("/Users/Martina/Desktop/alldata/za/train");
-		String megaDirectory = "/Users/Martina/Desktop/alldata/za/mega";
+		File sourceDirectoryZA = new File("/Users/Martina/Desktop/alldata Kopie/za/train");
+		String megaDirectoryZA = "/Users/Martina/Desktop/alldata Kopie/za/mega";
 
 
-		File[] xmldocs = sourceDirectory.listFiles();
+		File[] xmldocs = sourceDirectoryZA.listFiles();
 		ArrayList<File> fileList = new ArrayList<File>(Arrays.asList(xmldocs));
 
-		for (String category: ZACATEGORIES) {           
+		for (String category: ZACATEGORIES) {          
 			String ids = "";
 			String titlesDE = "";
 			String titlesEN = "";
@@ -222,7 +234,58 @@ public class Maker {
 				System.out.println(cleancategory);
 				xmlOutput.setFormat(Format.getPrettyFormat());
 				xmlOutput.output(document, new FileWriter(  
-						megaDirectory + "/" + cleancategory + ".xml"));
+						megaDirectoryZA + "/" + cleancategory + ".xml"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}  
+		}
+		
+		
+		File[] xmldocs2 = sourceDirectoryCESSDA.listFiles();
+		ArrayList<File> fileList2 = new ArrayList<File>(Arrays.asList(xmldocs2));
+
+		for (String category: CESSDATOPICS) {          
+			String ids = "";
+			String titlesDE = "";
+			String titlesEN = "";
+			String creators = "";
+			String contentsDE = "";
+			String contentsEN = "";
+
+			for(int i=0; i < fileList2.size(); i++) {
+				String filepath = fileList2.get(i).getPath();
+				Study study = parse(filepath);
+
+				if (study.cessdaTopics().contains(category)) {
+					ids = ids + " " + study.id();
+					titlesDE = titlesDE + " " + study.titleDE();
+					titlesEN = titlesEN + " " + study.titleEN();
+					creators = creators + " " + study.creators();
+					contentsDE = contentsDE + " " + study.contentDE();
+					contentsEN = contentsEN + " " + study.contentEN();
+				};
+
+			}
+
+
+			Element megadoc = new Element("megadoc");
+			Document document = new Document(megadoc); 
+
+			megadoc.addContent(new Element("ids").setText(ids));
+			megadoc.addContent(new Element("titlesDE").setText(titlesDE)); 
+			megadoc.addContent(new Element("titlesEN").setText(titlesEN));
+			megadoc.addContent(new Element("creators").setText(creators));
+			megadoc.addContent(new Element("contentsDE").setText(contentsDE));
+			megadoc.addContent(new Element("contentsEN").setText(contentsEN));
+
+			XMLOutputter xmlOutput = new XMLOutputter();  
+			try {
+				String cleancategory = category.replace("/ ", "");
+				System.out.println(cleancategory);
+				xmlOutput.setFormat(Format.getPrettyFormat());
+				xmlOutput.output(document, new FileWriter(  
+						megaDirectoryCESSDA + "/" + cleancategory + ".xml"));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -230,6 +293,12 @@ public class Maker {
 		}
 	}
 
+	
+	/**
+	 * Turns training document into Study object for easier handling
+	 * @param inFile The training document
+	 * @return The Study object
+	 */
 	static Study parse(String inFile) {
 		String id = "";
 		String titleDE = "";
@@ -303,6 +372,9 @@ public class Maker {
 
 
 
+	/**
+	 * Makes megadocuments without fields
+	 */
 	static void makeMegadocsNoFields() {
 
 		File sourceDirectory = new File("/Users/Martina/Desktop/alldata/cessda/train");

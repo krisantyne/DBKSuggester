@@ -2,6 +2,9 @@ package de.unidue.DBKSuggester;
 
 import java.util.List;
 
+/**
+ * Study object for easy passing around of information
+ */
 public class Study {
 
 	String id;

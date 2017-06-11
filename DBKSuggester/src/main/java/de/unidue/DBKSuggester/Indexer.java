@@ -27,12 +27,19 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+/**
+ * Builds Elasticsearch index and adds new studies both to the index and the megadoc files
+ */
 public class Indexer {
 
 	private TransportClient client;
 	private Megadoc megadoc;
 	String path = "";
 
+	/**
+	 * @param client
+	 * @param megadoc
+	 */
 	public Indexer(TransportClient client, Megadoc megadoc) {
 		this.client = client;
 		this.megadoc = megadoc;
@@ -40,6 +47,12 @@ public class Indexer {
 		path = megadoc.path;
 	}
 
+	/**
+	 * Updates the megadoc files and index for each of the user selected categories with the new study
+	 * @param inFile The uploaded file
+	 * @param cessda CESSDA categories selected by user
+	 * @param za ZA categories selected by user
+	 */
 	public void indexStudy(File inFile, List<String> cessda, List<String> za){
 
 		for (String c : cessda) {
@@ -62,6 +75,12 @@ public class Indexer {
 		
 	}
 	
+	/**
+	 * Adds the new study to the contents of a megadoc file and writes the updated file
+	 * @param json Megadoc file converted to JSON
+	 * @param study New study as a Study object
+	 * @param filepath File path of the megadoc file
+	 */
 	private void writeXML(Map<String, Object> json, Study study, String filepath) {
 		
 		String eol = System.getProperty("line.separator");
@@ -95,6 +114,11 @@ public class Indexer {
 	}
 	
 	
+	/**
+	 * Finds a megadoc in the index and updates it with the new file content
+	 * @param categoryName The megadoc's name
+	 * @param type CESSDA or ZA collection
+	 */
 	private void updateDocInIndex(String categoryName, String type) {
 		
 		SearchResponse response = client.prepareSearch("megadoc")
@@ -118,6 +142,9 @@ public class Indexer {
 		
 	}
 
+	/**
+	 * Creates megadoc index in Elasticsearch or resets it if it already exists
+	 */
 	public void makeIndex(){
 
 		boolean exists = client.admin().indices()
@@ -148,6 +175,10 @@ public class Indexer {
 
 	}
 
+	/**
+	 * Creates the index mappings and fills the index with data from the megadoc files
+	 * @param part CESSDA or ZA
+	 */
 	private void makeIndexPart(String part) {
 
 		try {
@@ -218,6 +249,12 @@ public class Indexer {
 	}
 
 
+	/**
+	 * Makes JSON from a megadocument file
+	 * @param inFile The megadocument file
+	 * @param filename The (file)name that gets put in the category field
+	 * @return JSON formatted content
+	 */
 	public static Map<String, Object> parseMegaDocument(String inFile, String filename){
 		Map<String, Object> jsonDocument = new HashMap<String, Object>();
 

@@ -2,6 +2,9 @@ package de.unidue.DBKSuggester;
 
 import java.util.List;
 
+/**
+ * Suggestion object for passing information from classifier to UI
+ */
 public class Suggestion {
 
 	List<String> cessdaCats;

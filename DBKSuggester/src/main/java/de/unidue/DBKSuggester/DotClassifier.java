@@ -22,14 +22,23 @@ import org.elasticsearch.action.termvectors.TermVectorsResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
+/**
+ * Megadocument classifier implementation using dot product
+ */
 public class DotClassifier extends Classifier {
 
 
+	/**
+	 * @param client
+	 */
 	public DotClassifier(TransportClient client) {
 		super(client);
-		// TODO Auto-generated constructor stub
 	}
 
+	/**
+	 * Calls classifyPart to get category suggestions for both CESSDA and ZA, gets "ids" field for 
+	 * each suggestion, returns object with suggestions and ids
+	 */
 	@Override
 	List<List<Map<String, String>>> classify(String inFile) {
 
@@ -68,6 +77,13 @@ public class DotClassifier extends Classifier {
 
 	}
 
+	/**
+	 * First finds query terms for each field, then gets document vectors for each megadoc, then
+	 * calculates dot products to determine categories to suggest
+	 * @param newDoc The document to be classified
+	 * @param part CESSDA or ZA
+	 * @return Map of megadoc IDs (ID number in Elasticsearch index) and score
+	 */
 	public Map<Integer, Float> classifyPart(XContentBuilder newDoc, String part) {
 
 		Map<Integer, Float> bestScores = new HashMap<Integer, Float>();
@@ -118,6 +134,7 @@ public class DotClassifier extends Classifier {
 				float dotproductContentsDE = calcDotProduct(queryTermsContentsDE, docVectorContentsDE);
 				float dotproductContentsEN = calcDotProduct(queryTermsContentsEN, docVectorContentsEN);
 
+				// the fields to be used can be modified here (remember to remove/add all calculations above for those fields too)
 				float score = (dotproductTitlesDE + dotproductTitlesEN + dotproductCreators + dotproductContentsDE + dotproductContentsEN) / 2;
 
 				scores.put(score, i);
@@ -130,7 +147,7 @@ public class DotClassifier extends Classifier {
 			float topscore = keys.get(0);
 
 			for (float k : keys) {
-				if (k*1.5 < topscore) break;
+				if (k*1.5 < topscore) break; // <---- cutoff for score can be adjusted here
 				bestScores.put(scores.get(k), k);
 			}
 
@@ -146,6 +163,12 @@ public class DotClassifier extends Classifier {
 
 	}
 
+	/**
+	 * Finds the best query terms for a field
+	 * @param fields Term statistics information from Elasticsearch 
+	 * @param field Name of the field
+	 * @return Map of terms and their tf-idfs for the query
+	 */
 	public Map<String, Float> getQueryTerms(Fields fields, String field) {
 
 		Map<Float, String> termsAndIDFs = new HashMap<Float, String>();
@@ -204,7 +227,7 @@ public class DotClassifier extends Classifier {
 		Map<String, Float> bestTermsAndTFIDFs = new HashMap<String, Float>();
 
 		for (int i=0; i < keys.size() ; i++) {
-			if (i == 10) break;
+			if (i == 10) break; // <----- adjust the max number of query terms here
 			bestTermsAndTFIDFs.put(termsAndIDFs.get(keys.get(i)), termsAndTFIDFs.get(termsAndIDFs.get(keys.get(i))));
 		}
 
@@ -212,6 +235,13 @@ public class DotClassifier extends Classifier {
 	}
 
 
+	/**
+	 * Gets the document vector of a field in a megadoc
+	 * @param fields Term statistics information from Elasticsearch 
+	 * @param field Name of the field
+	 * @param queryTerms The query terms of the field
+	 * @return Map of terms and their tf-idfs for the doc
+	 */
 	public Map<String, Float> getDocVector(Fields fields, String field, Set<String> queryTerms) {
 
 		Map<String, Float> docVector = new HashMap<String, Float>();
@@ -270,6 +300,12 @@ public class DotClassifier extends Classifier {
 
 	}
 
+	/**
+	 * Calculates dot product between query and a megadoc
+	 * @param query Query terms and their tf-idfs from the query
+	 * @param doc Query terms and their tf-idfs from the megadoc
+	 * @return The dot product
+	 */
 	public float calcDotProduct(Map<String, Float> query, Map<String, Float> doc) {
 		float dotproduct = 0f;
 
